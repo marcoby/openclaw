@@ -1,0 +1,270 @@
+---
+title: Deploy on Coolify
+---
+
+Deploy OpenClaw on Coolify, a self-hosted alternative to Railway/Render. Coolify supports Docker-based deployments and provides a web interface for managing your applications.
+
+## Prerequisites
+
+- A [Coolify instance](https://coolify.io) (self-hosted or cloud)
+- An API key from your preferred [model provider](/providers)
+- Basic understanding of Docker and environment variables
+
+## Deployment Options
+
+Coolify supports two deployment approaches:
+
+1. **Git-based deployment**: Coolify pulls from your repository and builds the Docker image
+2. **Docker Compose**: Use the existing `docker-compose.yml` with custom configurations
+
+## Option 1: Git-based Docker deployment (recommended)
+
+This method uses Coolify's built-in Docker build process with the existing Dockerfile.
+
+### Step 1: Create a new resource
+
+1. Log into your Coolify dashboard
+2. Select your **Project** and **Environment**
+3. Click **+ Add Resource** → **Application**
+4. Select **Public Git Repository** (or connect your private repo)
+5. Enter repository URL: `https://github.com/openclaw/openclaw`
+6. Choose the branch (usually `main`)
+
+### Step 2: Configure build settings
+
+In the Application settings:
+
+1. **Build Pack**: Select **Dockerfile**
+2. **Dockerfile Location**: Leave as `Dockerfile` (default)
+3. **Dockerfile Build Command**: Keep default or customize if needed
+4. **Port**: Set to `8080` (this is where the gateway will listen)
+
+### Step 3: Configure persistent storage
+
+OpenClaw needs persistent storage for configuration, credentials, and workspace.
+
+1. Go to **Storages** tab
+2. Add a new volume:
+   - **Name**: `openclaw-data`
+   - **Mount Path**: `/data`
+   - **Host Path**: Leave empty (Coolify manages it)
+
+### Step 4: Set environment variables
+
+Go to **Environment Variables** tab and add:
+
+| Variable                     | Value                    | Description                                      |
+| ---------------------------- | ------------------------ | ------------------------------------------------ |
+| `PORT`                       | `8080`                   | HTTP server port                                 |
+| `SETUP_PASSWORD`             | `<your-secure-password>` | Password for `/setup` wizard                     |
+| `OPENCLAW_STATE_DIR`         | `/data/.openclaw`        | Config and credentials directory                 |
+| `OPENCLAW_WORKSPACE_DIR`     | `/data/workspace`        | Agent workspace directory                        |
+| `OPENCLAW_GATEWAY_TOKEN`     | `<generate-random-hex>`  | Gateway authentication token (64+ chars)         |
+| `NODE_ENV`                   | `production`             | Node environment                                 |
+| `OPENCLAW_GATEWAY_BIND`      | `lan`                    | Listen on all interfaces                         |
+| `OPENCLAW_GATEWAY_PORT`      | `8080`                   | Gateway port (must match PORT)                   |
+
+**Generate a secure token:**
+```bash
+openssl rand -hex 32
+```
+
+### Step 5: Configure networking
+
+1. Go to **Domains** tab
+2. Either:
+   - Use the auto-generated domain (`<app-name>.<coolify-domain>`)
+   - Add your custom domain
+3. Enable **HTTPS** (Coolify auto-provisions Let's Encrypt certificates)
+
+### Step 6: Deploy
+
+1. Click **Deploy** button
+2. Monitor the build logs
+3. Wait for deployment to complete
+
+### Step 7: Complete setup wizard
+
+Once deployed, navigate to your domain:
+
+1. Visit `https://<your-domain>/setup`
+2. Enter your `SETUP_PASSWORD`
+3. Select a model provider and paste your API key
+4. Optionally configure messaging channels (Telegram, Discord, Slack)
+5. Click **Run setup**
+
+## Option 2: Docker Compose deployment
+
+Use this if you need more control or want to run multiple services.
+
+### Step 1: Fork or clone the repository
+
+Coolify can deploy directly from a repository with `docker-compose.yml`.
+
+### Step 2: Create a new resource
+
+1. In Coolify, select **+ Add Resource** → **Docker Compose**
+2. Connect to your Git repository
+3. Point to the `docker-compose.yml` file at the root
+
+### Step 3: Create a `.env` file
+
+Coolify will look for environment variables. Create a `.env` file in your repository or use Coolify's environment variable UI:
+
+```bash
+# Gateway Configuration
+OPENCLAW_GATEWAY_TOKEN=<64-char-hex-token>
+OPENCLAW_GATEWAY_PORT=8080
+OPENCLAW_GATEWAY_BIND=lan
+OPENCLAW_BRIDGE_PORT=18790
+
+# Directories (persistent storage)
+OPENCLAW_CONFIG_DIR=/data/.openclaw
+OPENCLAW_WORKSPACE_DIR=/data/workspace
+
+# Setup wizard
+SETUP_PASSWORD=<your-secure-password>
+
+# Provider credentials (optional - can be set via /setup wizard)
+CLAUDE_AI_SESSION_KEY=
+CLAUDE_WEB_SESSION_KEY=
+CLAUDE_WEB_COOKIE=
+
+# Docker image
+OPENCLAW_IMAGE=openclaw:latest
+```
+
+### Step 4: Configure volumes
+
+Coolify should automatically detect volumes from `docker-compose.yml`, but verify:
+
+- Config directory: `/data/.openclaw`
+- Workspace directory: `/data/workspace`
+
+### Step 5: Deploy
+
+1. Click **Deploy**
+2. Coolify will run `docker compose up -d`
+3. Monitor logs in the Coolify dashboard
+
+## Health checks
+
+Coolify can monitor your deployment health:
+
+1. Go to **Health Checks** tab
+2. Enable health check
+3. Set **Health Check Path**: `/health`
+4. Set **Health Check Port**: `8080`
+5. Coolify will restart the container if health checks fail
+
+## After deployment
+
+### Access the Control UI
+
+The web dashboard is available at `https://<your-domain>/openclaw`.
+
+### Add messaging channels
+
+You can add channels either via:
+
+1. **Web wizard** (`/setup`), or
+2. **CLI** (if you exec into the container):
+   ```bash
+   openclaw providers add --provider telegram --token <token>
+   openclaw providers add --provider discord --token <token>
+   ```
+
+### View logs
+
+In Coolify dashboard:
+
+1. Select your application
+2. Click **Logs** tab
+3. View real-time logs from the gateway
+
+### Backups
+
+Download a backup at:
+- `https://<your-domain>/setup/export`
+
+This exports your OpenClaw state + workspace so you can migrate to another host.
+
+## Updating OpenClaw
+
+### Automatic updates
+
+1. Enable **Auto Deploy** in Coolify (watches for new commits)
+2. Configure **Webhook** to trigger on push to your repository
+
+### Manual updates
+
+1. In Coolify dashboard, click **Deploy** button
+2. Coolify will pull the latest changes and rebuild
+
+### Update via Docker image tag
+
+If you prefer version pinning:
+
+1. Set `OPENCLAW_IMAGE=openclaw:<version>` in environment variables
+2. Update the version when you want to upgrade
+3. Redeploy
+
+## Troubleshooting
+
+### Container won't start
+
+Check logs in Coolify dashboard. Common issues:
+
+- Missing `OPENCLAW_GATEWAY_TOKEN`
+- Invalid `PORT` configuration
+- Volume mount permissions
+
+### Can't access `/setup` page
+
+- Verify `PORT` and `OPENCLAW_GATEWAY_PORT` match
+- Check Coolify domain configuration
+- Ensure HTTPS is enabled
+
+### Gateway crashes on startup
+
+- Check that `OPENCLAW_STATE_DIR` volume is mounted
+- Verify environment variables are set
+- Review startup logs for errors
+
+### Persistent storage not working
+
+- Verify volume is attached in Coolify Storages tab
+- Check mount paths match environment variables
+- Ensure the container user (node:1000) has write permissions
+
+## Production recommendations
+
+1. **Set resource limits**: Configure CPU/Memory limits in Coolify
+2. **Enable monitoring**: Use Coolify's built-in monitoring
+3. **Configure backups**: Regular exports via `/setup/export`
+4. **Use strong tokens**: Generate cryptographically secure tokens
+5. **Enable HTTPS**: Always use HTTPS for production deployments
+6. **Set up alerts**: Configure Coolify notifications for deployment failures
+
+## Scaling considerations
+
+For higher load:
+
+1. **Vertical scaling**: Increase CPU/Memory in Coolify resource settings
+2. **Horizontal scaling**: Currently not supported (single gateway instance)
+3. **Database**: OpenClaw uses file-based storage; consider future migration to PostgreSQL for multi-instance setups
+
+## Migration from other platforms
+
+If migrating from Railway, Render, or another platform:
+
+1. Export your data from the old platform (`/setup/export`)
+2. Deploy OpenClaw on Coolify (follow steps above)
+3. Import your data via the `/setup` wizard or manually place files in `/data/.openclaw`
+4. Update any external integrations to point to the new domain
+
+## Support
+
+- [OpenClaw Documentation](https://docs.openclaw.ai)
+- [GitHub Issues](https://github.com/openclaw/openclaw/issues)
+- [Community Discord](https://discord.gg/openclaw) (if available)

@@ -826,6 +826,14 @@
       "destination": "/railway"
     },
     {
+      "source": "/install/coolify",
+      "destination": "/coolify"
+    },
+    {
+      "source": "/install/coolify/",
+      "destination": "/coolify"
+    },
+    {
       "source": "/install/northflank/",
       "destination": "/northflank"
     },
@@ -873,6 +881,7 @@
           "railway",
           "render",
           "northflank",
+          "coolify",
           "install/bun"
         ]
       },
