@@ -10,6 +10,12 @@ title: "Docker"
 
 Docker is **optional**. Use it only if you want a containerized gateway or to validate the Docker flow.
 
+**Looking for cloud deployment?** Check out the one-click deployment guides:
+- [Coolify](/coolify) — Self-hosted platform with web UI
+- [Railway](/railway) — Managed platform with volume storage
+- [Render](/render) — Infrastructure as Code deployment
+- [Northflank](/northflank) — Advanced cloud platform
+
 ## Is Docker right for me?
 
 - **Yes**: you want an isolated, throwaway gateway environment or to run OpenClaw on a host without local installs.

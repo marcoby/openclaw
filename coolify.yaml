@@ -1,0 +1,94 @@
+# Coolify Docker Compose Template
+# This file can be used as a starting point for deploying OpenClaw on Coolify
+# 
+# Usage:
+#   1. Create a new Docker Compose application in Coolify
+#   2. Point to your repository containing this file
+#   3. Set the required environment variables in Coolify UI
+#   4. Deploy
+#
+# Required environment variables (set in Coolify):
+#   - OPENCLAW_GATEWAY_TOKEN (generate with: openssl rand -hex 32)
+#   - SETUP_PASSWORD (for /setup wizard)
+#
+# Optional provider credentials (can also be set via /setup wizard):
+#   - CLAUDE_AI_SESSION_KEY
+#   - CLAUDE_WEB_SESSION_KEY
+#   - CLAUDE_WEB_COOKIE
+
+version: '3.8'
+
+services:
+  openclaw-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        OPENCLAW_DOCKER_APT_PACKAGES: ${OPENCLAW_DOCKER_APT_PACKAGES:-}
+    
+    # Health check for Coolify monitoring
+    healthcheck:
+      test: ["CMD", "node", "dist/index.js", "health", "--token", "${OPENCLAW_GATEWAY_TOKEN}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    environment:
+      # Node environment
+      HOME: /home/node
+      TERM: xterm-256color
+      NODE_ENV: production
+      
+      # HTTP server port (Coolify default)
+      PORT: ${PORT:-8080}
+      
+      # Gateway configuration
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      OPENCLAW_GATEWAY_PORT: ${PORT:-8080}
+      OPENCLAW_GATEWAY_BIND: ${OPENCLAW_GATEWAY_BIND:-lan}
+      OPENCLAW_BRIDGE_PORT: ${OPENCLAW_BRIDGE_PORT:-18790}
+      
+      # Setup wizard
+      SETUP_PASSWORD: ${SETUP_PASSWORD}
+      
+      # Provider credentials (optional - set via /setup wizard)
+      CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY:-}
+      CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY:-}
+      CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE:-}
+      
+      # Persistent storage paths
+      OPENCLAW_STATE_DIR: ${OPENCLAW_STATE_DIR:-/data/.openclaw}
+      OPENCLAW_WORKSPACE_DIR: ${OPENCLAW_WORKSPACE_DIR:-/data/workspace}
+    
+    volumes:
+      # Main persistent storage volume
+      # In Coolify, configure this as a named volume mounted at /data
+      - openclaw-data:/data
+    
+    ports:
+      # Expose gateway port
+      # Coolify will handle reverse proxy and HTTPS
+      - "${PORT:-8080}:${PORT:-8080}"
+    
+    # Use init to properly handle signals
+    init: true
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Run the gateway
+    command:
+      - node
+      - dist/index.js
+      - gateway
+      - --bind
+      - ${OPENCLAW_GATEWAY_BIND:-lan}
+      - --port
+      - ${PORT:-8080}
+
+volumes:
+  # Persistent storage for config, credentials, and workspace
+  # Coolify will manage this volume
+  openclaw-data:
+    driver: local
