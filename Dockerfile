@@ -32,6 +32,7 @@ RUN pnpm ui:build
 # Copy entrypoint
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
+RUN mkdir -p /data && chown -R node:node /data
 
 ENV NODE_ENV=production
 
