@@ -34,7 +34,8 @@ services:
         "--bind",
         "lan",
         "--port",
-        "18789"
+        "18789",
+        "--allow-unconfigured"
       ]
 
   openclaw-cli:
