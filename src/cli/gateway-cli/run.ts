@@ -217,33 +217,37 @@ async function runGatewayCommand(opts: GatewayRunOpts) {
       '"gateway.remote.token" is for remote CLI calls; it does not enable local gateway auth.',
     );
   }
-  if (resolvedAuthMode === "token" && !hasToken && !resolvedAuth.allowTailscale) {
-    defaultRuntime.error(
-      [
-        "Gateway auth is set to token, but no token is configured.",
-        "Set gateway.auth.token (or OPENCLAW_GATEWAY_TOKEN), or pass --token.",
-        ...authHints,
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    );
-    defaultRuntime.exit(1);
-    return;
+  // Skip auth validation in unconfigured mode - the /setup wizard will handle configuration
+  if (!opts.allowUnconfigured) {
+    if (resolvedAuthMode === "token" && !hasToken && !resolvedAuth.allowTailscale) {
+      defaultRuntime.error(
+        [
+          "Gateway auth is set to token, but no token is configured.",
+          "Set gateway.auth.token (or OPENCLAW_GATEWAY_TOKEN), or pass --token.",
+          ...authHints,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
+      defaultRuntime.exit(1);
+      return;
+    }
+    if (resolvedAuthMode === "password" && !hasPassword) {
+      defaultRuntime.error(
+        [
+          "Gateway auth is set to password, but no password is configured.",
+          "Set gateway.auth.password (or OPENCLAW_GATEWAY_PASSWORD), or pass --password.",
+          ...authHints,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
+      defaultRuntime.exit(1);
+      return;
+    }
   }
-  if (resolvedAuthMode === "password" && !hasPassword) {
-    defaultRuntime.error(
-      [
-        "Gateway auth is set to password, but no password is configured.",
-        "Set gateway.auth.password (or OPENCLAW_GATEWAY_PASSWORD), or pass --password.",
-        ...authHints,
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    );
-    defaultRuntime.exit(1);
-    return;
-  }
-  if (bind !== "loopback" && !hasSharedSecret) {
+  // In unconfigured mode, allow binding without auth - the /setup wizard will handle it
+  if (bind !== "loopback" && !hasSharedSecret && !opts.allowUnconfigured) {
     defaultRuntime.error(
       [
         `Refusing to bind gateway to ${bind} without auth.`,
