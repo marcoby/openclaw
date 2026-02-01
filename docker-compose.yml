@@ -44,7 +44,8 @@ services:
     stdin_open: true
     tty: true
     init: true
-    entrypoint: [ "node", "dist/index.js" ]
+    # Keep the container running for interactive shell access
+    command: tail -f /dev/null
 
 volumes:
   openclaw_config: {}
