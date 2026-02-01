@@ -31,16 +31,29 @@ hydrate_cmd='
     fi
 '
 
-# 3. Execution
+# 3. Configuration Helpers
+configure_cmd='
+    if [ -n "$OPENCLAW_GATEWAY_TRUSTED_PROXIES" ]; then
+        echo "🔧 Marcoby Core: Configuring trusted proxies from env..."
+        # Convert comma-separated string to JSON array: "a,b" -> ["a","b"]
+        PROXIES_JSON=$(echo "$OPENCLAW_GATEWAY_TRUSTED_PROXIES" | awk -F, "{printf \"[\"; for(i=1;i<=NF;i++){printf \"\\\"%s\\\"\", \$i; if(i<NF)printf \",\"}; printf \"]\"}")
+        
+        node dist/index.js config set gateway.trustedProxies "$PROXIES_JSON" > /dev/null
+    fi
+'
+
+# 4. Execution
 if [ "$(id -u)" = '0' ]; then
     # Run hydration as node user to ensure files are owned by node
     gosu node bash -c "$hydrate_cmd"
+    gosu node bash -c "$configure_cmd"
     
     echo "🚀 Starting OpenClaw Gateway (dropping privileges)..."
     exec gosu node "$@"
 else
     # We are already non-root (e.g. dev mode or forced user)
     bash -c "$hydrate_cmd"
+    bash -c "$configure_cmd"
     
     echo "🚀 Starting OpenClaw Gateway..."
     exec "$@"

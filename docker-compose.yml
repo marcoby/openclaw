@@ -9,8 +9,9 @@ services:
       TERM: xterm-256color
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      # Fixed token for deployment auth
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
+      # Comma-separated list of trusted proxies (e.g. for Coolify/Traefik: 127.0.0.1,172.16.0.0/12)
+      OPENCLAW_GATEWAY_TRUSTED_PROXIES: ${OPENCLAW_GATEWAY_TRUSTED_PROXIES:-}
       CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY:-}
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY:-}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE:-}
