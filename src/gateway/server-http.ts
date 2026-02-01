@@ -44,6 +44,7 @@ import { resolveGatewayClientIp } from "./net.js";
 import { handleOpenAiHttpRequest } from "./openai-http.js";
 import { handleOpenResponsesHttpRequest } from "./openresponses-http.js";
 import { handleSetupHttpRequest } from "./server-setup.js";
+import { handleExportHttpRequest } from "./server-export.js";
 import { handleToolsInvokeHttpRequest } from "./tools-invoke-http.js";
 
 type SubsystemLogger = ReturnType<typeof createSubsystemLogger>;
@@ -323,6 +324,16 @@ export function createGatewayHttpServer(opts: {
       if (
         await handleSetupHttpRequest(req, res, {
           config: configSnapshot,
+        })
+      ) {
+        return;
+      }
+
+      // Export endpoint for backup (requires auth)
+      if (
+        await handleExportHttpRequest(req, res, {
+          auth: resolvedAuth,
+          trustedProxies,
         })
       ) {
         return;

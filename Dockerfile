@@ -46,6 +46,10 @@ ENV NODE_ENV=production
 # Allow non-root user to write temp files during runtime/tests.
 RUN chown -R node:node /app
 
+# Default port for gateway (can be overridden via PORT env var)
+ENV PORT=18789
+EXPOSE 18789
+
 # Security hardening: Container runs as root initially to fix permissions,
 # then drops to 'node' user via docker-entrypoint.sh
 
@@ -56,4 +60,7 @@ RUN chown -R node:node /app
 #   1. Set OPENCLAW_GATEWAY_TOKEN or OPENCLAW_GATEWAY_PASSWORD env var
 #   2. Override CMD: ["node","dist/index.js","gateway","--allow-unconfigured","--bind","lan"]
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["node", "dist/index.js", "gateway", "--allow-unconfigured"]
+# Default: Start gateway in deployment mode
+# - --allow-unconfigured: Enables /setup wizard for first-time configuration
+# - --bind lan: Listen on all interfaces (required for container networking)
+CMD ["node", "dist/index.js", "gateway", "--allow-unconfigured", "--bind", "lan"]

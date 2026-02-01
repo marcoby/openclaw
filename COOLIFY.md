@@ -76,8 +76,24 @@ Configure in Coolify:
 ## After Deployment
 
 1. **Setup Wizard**: `https://<domain>/setup`
+   - If `SETUP_PASSWORD` is set, you'll be prompted to enter it first
+   - Configure your admin password, AI provider, and API key
+   - Optionally enable channel plugins (Telegram, Discord, Slack, Teams)
+   - The gateway will restart automatically after setup
+
 2. **Control UI**: `https://<domain>/openclaw`
+   - Access the OpenClaw dashboard with your admin password
+
 3. **Backup/Export**: `https://<domain>/setup/export`
+   - Requires gateway token or password authentication
+   - Downloads a JSON backup of your configuration
+   - Example: `curl -H "Authorization: Bearer <token>" https://<domain>/setup/export -o backup.json`
+
+4. **Channel Login**: After initial setup, use CLI for channel authentication:
+
+   ```bash
+   docker exec -it <container> openclaw channels login telegram
+   ```
 
 ## Documentation
 
