@@ -29,20 +29,25 @@ RUN OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build
 ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:build
 
+# Install gosu for easy step-down from root
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y gosu; \
+  rm -rf /var/lib/apt/lists/*; \
+  gosu nobody true
+
 # Copy entrypoint
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
-RUN mkdir -p /data && chown -R node:node /data
+RUN mkdir -p /data
 
 ENV NODE_ENV=production
 
 # Allow non-root user to write temp files during runtime/tests.
 RUN chown -R node:node /app
 
-# Security hardening: Run as non-root user
-# The node:22-bookworm image includes a 'node' user (uid 1000)
-# This reduces the attack surface by preventing container escape via root privileges
-USER node
+# Security hardening: Container runs as root initially to fix permissions,
+# then drops to 'node' user via docker-entrypoint.sh
 
 # Start gateway server with default config.
 # Binds to loopback (127.0.0.1) by default for security.
