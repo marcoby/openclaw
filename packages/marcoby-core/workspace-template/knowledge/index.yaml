@@ -1,0 +1,18 @@
+- id: marcoby-manifest
+  title: The Marcoby Manifest
+  type: manifesto
+  source: knowledge/source/marcoby-manifest.txt
+  notes: knowledge/notes/marcoby-manifest.md
+  summary: knowledge/summaries/marcoby-manifest.summary.md
+  owner: Von
+  date: 2026-02-01
+  tags: [strategy, org, values, offerings]
+- id: marcoby-final-report
+  title: Marcoby Final Report: Strategic Recommendations & Roadmap
+  type: strategy-report
+  source: knowledge/source/marcoby-final-report.txt
+  notes: knowledge/notes/marcoby-final-report.md
+  summary: knowledge/summaries/marcoby-final-report.summary.md
+  owner: Von
+  date: 2026-01-30
+  tags: [pricing, niches, roadmap, hiring, openclaw]

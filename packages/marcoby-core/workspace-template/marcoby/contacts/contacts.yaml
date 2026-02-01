@@ -1,0 +1,16 @@
+# Contacts Directory
+# Add people and partners you interact with.
+
+- name: <Full Name>
+  role: <Role>
+  org: <Company>
+  email: <email@example.com>
+  phone: <+1-xxx-xxx-xxxx>
+  notes: <context, relationship, account links>
+
+- name: <Vendor Rep>
+  role: <Account Manager>
+  org: <Vendor>
+  email: <rep@vendor.com>
+  phone: <...>
+  notes: <contract renewal date, plan details>

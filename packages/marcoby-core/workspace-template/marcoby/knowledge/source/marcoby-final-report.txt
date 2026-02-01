@@ -1,0 +1,63 @@
+Marcoby Final Report: Strategic Recommendations & Roadmap
+To: Von Jackson, Founder & CEO
+From: Fractional COO
+Date: January 30, 2026
+Subject: Final Recommendations for Offer Restructuring & Scaling to $100k MRR
+
+1. Executive Summary
+Catalyst (Managed IT) is the foundation; Nexus (AI & Automation) is the growth accelerant. Pivot the front-door offer to lead with Nexus automations, bundling Catalyst for stability. Differentiate from MSPs by positioning IT as the engine powering automation.
+
+2. Strategic Pivot: Nexus as the Lead-In
+- Observation: IT support seen as cost center; Automation/AI seen as investment.
+- Recommendation: Market outcomes (automation) and include managed IT as part of the bundle.
+
+2.1 Proposed Offer Structure (3 Tiers)
+All tiers include Catalyst + Pulse; tiers differ by Nexus automation count. Services still purchasable à la carte.
+- Tier 1: Foundation — SMBs/Solos — 1 custom automation; Core security, remote support, basic M365 mgmt.
+- Tier 2: Growth — 5–20 users — Up to 3 automations; Full Catalyst mgmt, onboarding, vendor mgmt.
+- Tier 3: Scale — Manufacturing/Established Law — Up to 5 automations; vCIO, compliance, advanced security, priority support.
+Note: Charge setup + maintenance for automations beyond included.
+Pricing Insight: Good-Better-Best nudges buyers to the middle; top tier anchors perception.
+
+2.2 Optional Future Strategy: Nexus Core (OpenClaw)
+- Stage 1: Use White Label Agency for fulfillment.
+- Stage 2 (optional): Build internal IP (OpenClaw) by dogfooding; over time, replace simpler automations to improve margins.
+- Differentiation: Agency = labor; OpenClaw = intelligence in client env.
+
+2.3 Optional Strategic Application: Digital Labor (long-term)
+- Digital L1 Engineer: Ingests RMM webhooks, executes fixes, closes tickets.
+- Digital Provisioning Agent: Automates onboarding across M365, Pulse, RMM.
+- Digital Research Assistant: Pre-meeting briefings from public data.
+Case study: Klarna AI assistant handled 2/3 of chats (~700 agents equivalent).
+
+3. Niche Strategy: Specialized Expertise
+Focus niches: Law Firms and Manufacturing.
+3.1 Law Firms — Top 5 Automations: Intake→Case file; document drafting; meeting transcription; billing reminders; calendar/docket sync. Validation: Clio Legal Trends Report.
+3.2 Manufacturing — Top 5 Automations: Inventory alerts; shift handoff logs; safety incident reporting; vendor invoice OCR→ERP; maintenance scheduling. Validation: McKinsey Digital Manufacturing.
+
+4. Operational Fulfillment & Infrastructure: Dual-Track + Visual OS
+- Track 1: White Label Agency — immediate execution; 25% rev share (automations) / 50% (apps). Vendor relationship; no OpenClaw exposure.
+- Track 2: OpenClaw — optional internal IP; start with internal dogfooding, gradually replace simple automations.
+- Visual Operating System (Miro): Central nervous system linking to OneDrive SOPs. Hybrid dashboard for humans + AI; technical validation by Von required (RMM configs, network, patching flows).
+Model: “Hollywood/Flash Organizations” — assemble specialized teams; high agility and margins.
+
+5. Scaling the Team: The Core 5 to $100k MRR
+Priority hires:
+1) SDR/BDR (immediate) — run SDR playbook; evolve to close Tier 1–2 deals.
+2) Support Engineer L1/L2 (critical) — offload Catalyst tickets; free Von for sales/strategy.
+3) Full-Time Engineer (conditional) — only if activating OpenClaw/IP.
+4) Customer Success Manager — retention, QBRs, upsell automations.
+5) Junior roles (contract) — burst capacity 6–9 months.
+
+6. Financial Outlook & Next Steps
+- Target ARPU: ~$2,500/mo; ~40 clients → $100k MRR.
+- Margins: Variable cost via rev share + high-margin recurring services.
+Next 14 Days:
+1) Intro to Agency leadership; confirm capacity for Law & Manufacturing bundles.
+2) Formalize Agency agreement (25%/50% split).
+3) Technical audit of Miro/OneDrive SOPs; correct assumptions.
+4) Update website/sales deck: Nexus-first + 3-tier bundles.
+5) Launch SDR outreach to Law & Manufacturing using lead list.
+
+Closing Note
+Dual-track strategy: Agency for speed/scale; OpenClaw as optional IP play. Miro as shareable interface with AI while protecting data. Sales remains a bottleneck; agency + automation focus is promising given AI-driven market shifts.
