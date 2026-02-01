@@ -39,6 +39,8 @@ export async function resolveGatewayRuntimeConfig(params: {
   openResponsesEnabled?: boolean;
   auth?: GatewayAuthConfig;
   tailscale?: GatewayTailscaleConfig;
+  /** Skip auth validation for unconfigured mode (setup wizard) */
+  allowUnconfigured?: boolean;
 }): Promise<GatewayRuntimeConfig> {
   const bindMode = params.bind ?? params.cfg.gateway?.bind ?? "loopback";
   const customBindHost = params.cfg.gateway?.customBindHost;
@@ -85,19 +87,22 @@ export async function resolveGatewayRuntimeConfig(params: {
   const canvasHostEnabled =
     process.env.OPENCLAW_SKIP_CANVAS_HOST !== "1" && params.cfg.canvasHost?.enabled !== false;
 
-  assertGatewayAuthConfigured(resolvedAuth);
-  if (tailscaleMode === "funnel" && authMode !== "password") {
-    throw new Error(
-      "tailscale funnel requires gateway auth mode=password (set gateway.auth.password or OPENCLAW_GATEWAY_PASSWORD)",
-    );
-  }
-  if (tailscaleMode !== "off" && !isLoopbackHost(bindHost)) {
-    throw new Error("tailscale serve/funnel requires gateway bind=loopback (127.0.0.1)");
-  }
-  if (!isLoopbackHost(bindHost) && !hasSharedSecret) {
-    throw new Error(
-      `refusing to bind gateway to ${bindHost}:${params.port} without auth (set gateway.auth.token/password, or set OPENCLAW_GATEWAY_TOKEN/OPENCLAW_GATEWAY_PASSWORD)`,
-    );
+  // Skip auth validation in unconfigured mode - the /setup wizard will handle configuration
+  if (!params.allowUnconfigured) {
+    assertGatewayAuthConfigured(resolvedAuth);
+    if (tailscaleMode === "funnel" && authMode !== "password") {
+      throw new Error(
+        "tailscale funnel requires gateway auth mode=password (set gateway.auth.password or OPENCLAW_GATEWAY_PASSWORD)",
+      );
+    }
+    if (tailscaleMode !== "off" && !isLoopbackHost(bindHost)) {
+      throw new Error("tailscale serve/funnel requires gateway bind=loopback (127.0.0.1)");
+    }
+    if (!isLoopbackHost(bindHost) && !hasSharedSecret) {
+      throw new Error(
+        `refusing to bind gateway to ${bindHost}:${params.port} without auth (set gateway.auth.token/password, or set OPENCLAW_GATEWAY_TOKEN/OPENCLAW_GATEWAY_PASSWORD)`,
+      );
+    }
   }
 
   return {

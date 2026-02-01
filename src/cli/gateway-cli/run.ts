@@ -282,6 +282,7 @@ async function runGatewayCommand(opts: GatewayRunOpts) {
                   resetOnExit: Boolean(opts.tailscaleResetOnExit),
                 }
               : undefined,
+          allowUnconfigured: opts.allowUnconfigured,
         }),
     });
   } catch (err) {

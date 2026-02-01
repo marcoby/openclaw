@@ -150,6 +150,10 @@ export type GatewayServerOptions = {
     runtime: import("../runtime.js").RuntimeEnv,
     prompter: import("../wizard/prompts.js").WizardPrompter,
   ) => Promise<void>;
+  /**
+   * Allow starting without auth configured. Used for /setup wizard in deployment mode.
+   */
+  allowUnconfigured?: boolean;
 };
 
 export async function startGatewayServer(
@@ -253,6 +257,7 @@ export async function startGatewayServer(
     openResponsesEnabled: opts.openResponsesEnabled,
     auth: opts.auth,
     tailscale: opts.tailscale,
+    allowUnconfigured: opts.allowUnconfigured,
   });
   const {
     bindHost,
