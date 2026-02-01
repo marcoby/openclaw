@@ -29,6 +29,7 @@ import {
 import { applyHookMappings } from "./hooks-mapping.js";
 import { handleOpenAiHttpRequest } from "./openai-http.js";
 import { handleOpenResponsesHttpRequest } from "./openresponses-http.js";
+import { handleSetupHttpRequest } from "./server-setup.js";
 import { handleToolsInvokeHttpRequest } from "./tools-invoke-http.js";
 
 type SubsystemLogger = ReturnType<typeof createSubsystemLogger>;
@@ -242,6 +243,16 @@ export function createGatewayHttpServer(opts: {
     try {
       const configSnapshot = loadConfig();
       const trustedProxies = configSnapshot.gateway?.trustedProxies ?? [];
+
+      // Setup Wizard: Intercepts requests if the gateway is unconfigured.
+      if (
+        await handleSetupHttpRequest(req, res, {
+          config: configSnapshot,
+        })
+      ) {
+        return;
+      }
+
       if (await handleHooksRequest(req, res)) {
         return;
       }
