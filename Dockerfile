@@ -43,8 +43,17 @@ RUN mkdir -p /data
 
 ENV NODE_ENV=production
 
+# Default port for gateway (can be overridden via PORT env var)
+ENV PORT=8080
+EXPOSE 8080
+
 # Security hardening: Container runs as root initially to fix permissions,
 # then drops to 'node' user via docker-entrypoint.sh
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["node", "dist/index.js"]
+
+# Default: Start gateway in deployment mode
+# - --allow-unconfigured: Enables /setup wizard for first-time configuration
+# - --bind lan: Listen on all interfaces (required for container networking)
+# - Port is read from OPENCLAW_GATEWAY_PORT env var (entrypoint maps PORT -> OPENCLAW_GATEWAY_PORT)
+CMD ["node", "dist/index.js", "gateway", "--allow-unconfigured", "--bind", "lan"]

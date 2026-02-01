@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# Map PORT to OPENCLAW_GATEWAY_PORT if not already set (Coolify/Railway set PORT)
+if [ -n "$PORT" ] && [ -z "$OPENCLAW_GATEWAY_PORT" ]; then
+    export OPENCLAW_GATEWAY_PORT="$PORT"
+fi
+
 # Default paths
 OPENCLAW_HOME="/home/node/.openclaw"
 WORKSPACE_DIR="${OPENCLAW_WORKSPACE_DIR:-$OPENCLAW_HOME/workspace}"
