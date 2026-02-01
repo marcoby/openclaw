@@ -86,6 +86,7 @@ services:
       - ${OPENCLAW_GATEWAY_BIND:-lan}
       - --port
       - ${PORT:-8080}
+      - --allow-unconfigured
       
     # Use standard entrypoint from Dockerfile which handles hydration
     # entrypoint: ["/app/docker-entrypoint.sh"]
