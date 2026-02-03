@@ -58,7 +58,27 @@ export function attachGatewayWsConnectionHandler(params: {
     buildRequestContext,
   } = params;
 
+  // Setup WebSocket Keep-Alive (Heartbeat) to prevent proxy timeouts (e.g. 60s)
+  const pingInterval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      const socket = ws as any;
+      if (socket.isAlive === false) return socket.terminate();
+      socket.isAlive = false;
+      socket.ping();
+    });
+  }, 30000);
+
+  wss.on("close", () => {
+    clearInterval(pingInterval);
+  });
+
   wss.on("connection", (socket, upgradeReq) => {
+    // Initial heartbeat state
+    (socket as any).isAlive = true;
+    socket.on("pong", () => {
+      (socket as any).isAlive = true;
+    });
+
     let client: GatewayWsClient | null = null;
     let closed = false;
     const openedAt = Date.now();
