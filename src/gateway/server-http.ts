@@ -127,6 +127,39 @@ async function authorizeCanvasRequest(params: {
   return hasAuthorizedWsClientForIp(clients, clientIp);
 }
 
+function handleHealthzHttpRequest(req: IncomingMessage, res: ServerResponse): boolean {
+  const method = String(req.method ?? "GET").toUpperCase();
+  if (method !== "GET" && method !== "HEAD") return false;
+
+  let pathname = "";
+  try {
+    pathname = new URL(req.url ?? "/", "http://localhost").pathname;
+  } catch {
+    return false;
+  }
+
+  if (pathname !== "/healthz") return false;
+
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+
+  if (method === "HEAD") {
+    res.end();
+    return true;
+  }
+
+  res.end(
+    JSON.stringify({
+      ok: true,
+      service: "openclaw-gateway",
+      ts: new Date().toISOString(),
+    }),
+  );
+  return true;
+
+}
+
 export type HooksRequestHandler = (req: IncomingMessage, res: ServerResponse) => Promise<boolean>;
 
 export function createHooksRequestHandler(
@@ -304,11 +337,11 @@ export function createGatewayHttpServer(opts: {
   } = opts;
   const httpServer: HttpServer = opts.tlsOptions
     ? createHttpsServer(opts.tlsOptions, (req, res) => {
-        void handleRequest(req, res);
-      })
+      void handleRequest(req, res);
+    })
     : createHttpServer((req, res) => {
-        void handleRequest(req, res);
-      });
+      void handleRequest(req, res);
+    });
 
   async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     // Don't interfere with WebSocket upgrades; ws handles the 'upgrade' event.
@@ -317,6 +350,12 @@ export function createGatewayHttpServer(opts: {
     }
 
     try {
+      // Liveness probe: keep this very lightweight and unauthenticated.
+      // Note: this endpoint intentionally does NOT reveal config, tokens, or environment details.
+      if (handleHealthzHttpRequest(req, res)) {
+        return;
+      }
+
       const configSnapshot = loadConfig();
       const trustedProxies = configSnapshot.gateway?.trustedProxies ?? [];
 
