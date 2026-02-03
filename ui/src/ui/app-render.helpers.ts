@@ -125,6 +125,14 @@ export function renderChatControls(state: AppViewState) {
       </label>
       <button
         class="btn btn--sm btn--icon"
+        ?disabled=${!state.connected || state.chatLoading}
+        @click=${() => state.handleSendChat("/new", { restoreDraft: true })}
+        title="Start new session (clear context)"
+      >
+        ${icons.plus}
+      </button>
+      <button
+        class="btn btn--sm btn--icon"
         ?disabled=${state.chatLoading || !state.connected}
         @click=${() => {
           (state as unknown as OpenClawApp).resetToolStream();

@@ -368,6 +368,14 @@ export function createGatewayHttpServer(opts: {
         return;
       }
 
+      // Health check
+      if (req.url === "/healthz") {
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.end(JSON.stringify({ ok: true, service: "openclaw-coolify" }));
+        return;
+      }
+
       // Export endpoint for backup (requires auth)
       if (
         await handleExportHttpRequest(req, res, {
