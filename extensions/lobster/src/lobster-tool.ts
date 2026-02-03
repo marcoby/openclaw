@@ -134,6 +134,10 @@ async function runLobsterSubprocessOnce(
 
     child.stdout?.on("data", (chunk) => {
       const str = String(chunk);
+      // Stream output to logs so user can see it in real-time (e.g. for gh auth login code)
+      if (process.env.OPENCLAW_RAW_STREAM === "1") {
+        process.stdout.write(`[lobster:stdout] ${str}`);
+      }
       stdoutBytes += Buffer.byteLength(str, "utf8");
       if (stdoutBytes > maxStdoutBytes) {
         try {
@@ -147,7 +151,12 @@ async function runLobsterSubprocessOnce(
     });
 
     child.stderr?.on("data", (chunk) => {
-      stderr += String(chunk);
+      const str = String(chunk);
+      // Stream stderr to logs
+      if (process.env.OPENCLAW_RAW_STREAM === "1") {
+        process.stderr.write(`[lobster:stderr] ${str}`);
+      }
+      stderr += str;
     });
 
     const timer = setTimeout(() => {
