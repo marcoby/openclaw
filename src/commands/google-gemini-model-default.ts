@@ -1,7 +1,7 @@
 import type { OpenClawConfig } from "../config/config.js";
 import type { AgentModelListConfig } from "../config/types.js";
 
-export const GOOGLE_GEMINI_DEFAULT_MODEL = "google/gemini-3-pro-preview";
+export const GOOGLE_GEMINI_DEFAULT_MODEL = "google/gemini-1.5-pro";
 
 function resolvePrimaryModel(model?: AgentModelListConfig | string): string | undefined {
   if (typeof model === "string") {
