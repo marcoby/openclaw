@@ -184,12 +184,6 @@ export function normalizeGoogleModelId(id: string): string {
   if (id === "gemini-3-flash") {
     return "gemini-3-flash-preview";
   }
-  if (id === "gemini-flash-1.5") {
-    return "gemini-1.5-flash";
-  }
-  if (id === "gemini-pro-1.5") {
-    return "gemini-1.5-pro";
-  }
   return id;
 }
 
