@@ -284,6 +284,38 @@ export function createConfigIO(overrides: ConfigIoDeps = {}) {
       );
       normalizeConfigPaths(cfg);
 
+      // Dynamic env pickup for model defaults (safe: in-memory only)
+      if (cfg.agents?.defaults) {
+        // Primary model
+        const envPrimary = process.env.OPENCLAW_AGENTS_DEFAULTS_MODEL_PRIMARY?.trim();
+        if (envPrimary) {
+          if (typeof cfg.agents.defaults.model === "object" && cfg.agents.defaults.model !== null) {
+            cfg.agents.defaults.model.primary = envPrimary;
+          } else {
+            cfg.agents.defaults.model = { primary: envPrimary };
+          }
+        }
+        // Fallbacks
+        const envFallbacks = process.env.OPENCLAW_AGENTS_DEFAULTS_MODEL_FALLBACKS?.trim();
+        if (envFallbacks) {
+          let parsedFallbacks: string[] | undefined;
+          try {
+            parsedFallbacks = JSON.parse(envFallbacks);
+          } catch {
+            // fallback to comma-split
+            parsedFallbacks = envFallbacks
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+          }
+          if (typeof cfg.agents.defaults.model === "object" && cfg.agents.defaults.model !== null) {
+            cfg.agents.defaults.model.fallbacks = parsedFallbacks;
+          } else {
+            cfg.agents.defaults.model = { fallbacks: parsedFallbacks };
+          }
+        }
+      }
+
       const duplicates = findDuplicateAgentDirs(cfg, {
         env: deps.env,
         homedir: deps.homedir,
