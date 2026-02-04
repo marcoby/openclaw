@@ -196,7 +196,7 @@ export async function describeStickerImage(params: DescribeStickerParams): Promi
         : provider === "anthropic"
           ? "claude-opus-4-6"
           : provider === "google"
-            ? "gemini-1.5-flash"
+            ? "gemini-3-flash-preview"
             : "MiniMax-VL-01";
     const preferred = entries.find((entry) => entry.id === defaultId);
     return preferred ?? entries[0];
