@@ -98,17 +98,39 @@ ENV PATH="/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin:/root/.local/bin:/root/
 # Enable corepack for pnpm
 RUN corepack enable
 
+# Download local embedding model (Cached)
+RUN mkdir -p /usr/local/share/openclaw/models && \
+  curl -L --output /usr/local/share/openclaw/models/nomic-embed-text-v1.5.Q4_K_M.gguf \
+  "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5-GGUF/resolve/main/nomic-embed-text-v1.5.Q4_K_M.gguf"
+
+# Install extra global tools (Cached)
+# Untrusted, OpenCode, Summarize, Hyperbrowser, Claude, Kimi
+RUN bun pm -g untrusted && \
+  bun install -g @openai/codex @google/gemini-cli opencode-ai @steipete/summarize @hyperbrowser/agent && \
+  curl -fsSL https://claude.ai/install.sh | bash && \
+  curl -L https://code.kimi.com/install.sh | bash
+
+# Symlinks for tools (Cached)
+RUN ln -sf /root/.claude/bin/claude /usr/local/bin/claude || true && \
+  ln -sf /root/.kimi/bin/kimi /usr/local/bin/kimi || true
+
 # Copy package files first
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY ui/package.json ./ui/package.json
 COPY patches ./patches
-COPY scripts ./scripts
 
-# Install dependencies
+# Install dependencies (Cached unless lockfile changes)
 RUN pnpm install --frozen-lockfile
 
-# Copy everything
+# Copy scripts (Separated to allow caching of install)
+COPY scripts ./scripts
+
+# Copy remaining source
 COPY . .
+
+# Restoring openclaw-approve symlink after scripts copy
+RUN ln -sf /app/scripts/openclaw-approve.sh /usr/local/bin/openclaw-approve && \
+  chmod +x /app/scripts/*.sh /usr/local/bin/openclaw-approve
 
 # Build
 RUN OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build
@@ -126,23 +148,6 @@ RUN set -eux; \
 # Extract bundled skills
 RUN mkdir -p /app/bundled_skills && \
   cp -r /app/skills/* /app/bundled_skills/
-
-# Install extra tools
-RUN bun pm -g untrusted
-RUN bun install -g @openai/codex @google/gemini-cli opencode-ai @steipete/summarize @hyperbrowser/agent && \
-  curl -fsSL https://claude.ai/install.sh | bash && \
-  curl -L https://code.kimi.com/install.sh | bash
-
-# Download local embedding model
-RUN mkdir -p /usr/local/share/openclaw/models && \
-  curl -L --output /usr/local/share/openclaw/models/nomic-embed-text-v1.5.Q4_K_M.gguf \
-  "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5-GGUF/resolve/main/nomic-embed-text-v1.5.Q4_K_M.gguf"
-
-# Specialized symlinks and permissions
-RUN ln -sf /root/.claude/bin/claude /usr/local/bin/claude || true && \
-  ln -sf /root/.kimi/bin/kimi /usr/local/bin/kimi || true && \
-  ln -sf /app/scripts/openclaw-approve.sh /usr/local/bin/openclaw-approve && \
-  chmod +x /app/scripts/*.sh /usr/local/bin/openclaw-approve
 
 # Allow non-root user to write temp files during runtime/tests.
 RUN chown -R node:node /app
