@@ -89,10 +89,26 @@ export async function ensureOpenClawModelsJson(
   const agentDir = agentDirOverride?.trim() ? agentDirOverride.trim() : resolveOpenClawAgentDir();
 
   const explicitProviders = cfg.models?.providers ?? {};
+
+  // Inject providers from OPENCLAW_MODELS env var (Coolify/Docker support)
+  const envModelsRaw = process.env.OPENCLAW_MODELS;
+  let envProviders: Record<string, ProviderConfig> = {};
+  if (envModelsRaw) {
+    try {
+      const parsed = JSON.parse(envModelsRaw);
+      if (isRecord(parsed)) {
+        envProviders = parsed as Record<string, ProviderConfig>;
+      }
+    } catch {
+      // ignore invalid json
+    }
+  }
+
   const implicitProviders = await resolveImplicitProviders({ agentDir });
   const providers: Record<string, ProviderConfig> = mergeProviders({
     implicit: implicitProviders,
-    explicit: explicitProviders,
+    // Env vars override static config
+    explicit: mergeProviders({ implicit: explicitProviders, explicit: envProviders }),
   });
   const implicitBedrock = await resolveImplicitBedrockProvider({ agentDir, config: cfg });
   if (implicitBedrock) {
