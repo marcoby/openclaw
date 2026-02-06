@@ -490,6 +490,34 @@ export async function resolveImplicitProviders(params: {
     break;
   }
 
+  // Standard Providers (OpenAI, Anthropic, Google, OpenRouter, Groq, Mistral)
+  // We explicitly add these if env vars/profiles are found so they appear in models.json
+  const STANDARD_BASE_URLS: Record<string, string> = {
+    openai: "https://api.openai.com/v1",
+    anthropic: "https://api.anthropic.com/v1",
+    google: "https://generativelanguage.googleapis.com/v1beta",
+    openrouter: "https://openrouter.ai/api/v1",
+    groq: "https://api.groq.com/openai/v1",
+    mistral: "https://api.mistral.ai/v1",
+    deepgram: "https://api.deepgram.com/v1",
+    xai: "https://api.x.ai/v1",
+    cerebras: "https://api.cerebras.ai/v1",
+  };
+
+  for (const [provider, baseUrl] of Object.entries(STANDARD_BASE_URLS)) {
+    const key =
+      resolveEnvApiKeyVarName(provider) ??
+      resolveApiKeyFromProfiles({ provider, store: authStore });
+
+    if (key) {
+      providers[provider] = {
+        baseUrl,
+        apiKey: key,
+        models: [], // Built-in model support
+      };
+    }
+  }
+
   // Ollama provider - only add if explicitly configured
   const ollamaKey =
     resolveEnvApiKeyVarName("ollama") ??
