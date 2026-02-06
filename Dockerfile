@@ -1,10 +1,86 @@
-FROM node:22-bookworm
+FROM node:lts-bookworm-slim
 
-# Install Bun (required for build scripts)
-RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:${PATH}"
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive \
+  PIP_ROOT_USER_ACTION=ignore
 
-RUN corepack enable
+# Install Core & Power Tools + Docker CLI (client only)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  curl \
+  wget \
+  git \
+  build-essential \
+  software-properties-common \
+  python3 \
+  python3-pip \
+  python3-venv \
+  jq \
+  lsof \
+  openssl \
+  ca-certificates \
+  gnupg \
+  ripgrep fd-find fzf bat \
+  pandoc \
+  poppler-utils \
+  ffmpeg \
+  imagemagick \
+  graphviz \
+  sqlite3 \
+  pass \
+  chromium \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install Docker CE CLI
+RUN install -m 0755 -d /etc/apt/keyrings && \
+  curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
+  chmod a+r /etc/apt/keyrings/docker.asc && \
+  echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+  apt-get update && \
+  apt-get install -y docker-ce-cli && \
+  rm -rf /var/lib/apt/lists/*
+
+# Install Go
+RUN curl -L "https://go.dev/dl/go1.23.4.linux-amd64.tar.gz" -o go.tar.gz && \
+  tar -C /usr/local -xzf go.tar.gz && \
+  rm go.tar.gz
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Install GitHub CLI (gh)
+RUN mkdir -p -m 755 /etc/apt/keyrings && \
+  wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && \
+  chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && \
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
+  apt-get update && \
+  apt-get install -y gh && \
+  rm -rf /var/lib/apt/lists/*
+
+# Install uv
+ENV UV_INSTALL_DIR="/usr/local/bin"
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install Bun
+ENV BUN_INSTALL_NODE=0
+ENV BUN_INSTALL="/root/.bun"
+RUN apt-get update && apt-get install -y unzip && rm -rf /var/lib/apt/lists/* && \
+  curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:/root/.bun/install/global/bin:${PATH}"
+
+# Install Vercel, Marp, QMD
+RUN bun install -g vercel @marp-team/marp-cli https://github.com/tobi/qmd && hash -r
+
+# Configure QMD Persistence
+ENV XDG_CACHE_HOME="/root/.openclaw/cache"
+
+# Python tools
+RUN pip3 install ipython csvkit openpyxl python-docx pypdf botasaurus browser-use playwright --break-system-packages && \
+  playwright install-deps
+
+# Debian aliases
+RUN ln -s /usr/bin/fdfind /usr/bin/fd || true && \
+  ln -s /usr/bin/batcat /usr/bin/bat || true
 
 WORKDIR /app
 
@@ -16,18 +92,29 @@ RUN if [ -n "$OPENCLAW_DOCKER_APT_PACKAGES" ]; then \
   rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*; \
   fi
 
+# Final Path
+ENV PATH="/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin:/root/.local/bin:/root/.npm-global/bin:/root/.bun/bin:/root/.bun/install/global/bin:/root/.claude/bin:/root/.kimi/bin:/root/go/bin"
+
+# Enable corepack for pnpm
+RUN corepack enable
+
+# Copy package files first
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY ui/package.json ./ui/package.json
 COPY patches ./patches
 COPY scripts ./scripts
 
+# Install dependencies
 RUN pnpm install --frozen-lockfile
 
+# Copy everything
 COPY . .
+
+# Build
 RUN OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build
-# Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
 ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:build
+RUN npm link
 
 # Install gosu for easy step-down from root
 RUN set -eux; \
@@ -36,12 +123,26 @@ RUN set -eux; \
   rm -rf /var/lib/apt/lists/*; \
   gosu nobody true
 
-# Copy entrypoint
-COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
-RUN mkdir -p /data
+# Extract bundled skills
+RUN mkdir -p /app/bundled_skills && \
+  cp -r /app/skills/* /app/bundled_skills/
 
-ENV NODE_ENV=production
+# Install extra tools
+RUN bun pm -g untrusted
+RUN bun install -g @openai/codex @google/gemini-cli opencode-ai @steipete/summarize @hyperbrowser/agent && \
+  curl -fsSL https://claude.ai/install.sh | bash && \
+  curl -L https://code.kimi.com/install.sh | bash
+
+# Download local embedding model
+RUN mkdir -p /usr/local/share/openclaw/models && \
+  curl -L --output /usr/local/share/openclaw/models/nomic-embed-text-v1.5.Q4_K_M.gguf \
+  "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5-GGUF/resolve/main/nomic-embed-text-v1.5.Q4_K_M.gguf"
+
+# Specialized symlinks and permissions
+RUN ln -sf /root/.claude/bin/claude /usr/local/bin/claude || true && \
+  ln -sf /root/.kimi/bin/kimi /usr/local/bin/kimi || true && \
+  ln -sf /app/scripts/openclaw-approve.sh /usr/local/bin/openclaw-approve && \
+  chmod +x /app/scripts/*.sh /usr/local/bin/openclaw-approve
 
 # Allow non-root user to write temp files during runtime/tests.
 RUN chown -R node:node /app
@@ -53,14 +154,5 @@ EXPOSE 18789
 # Security hardening: Container runs as root initially to fix permissions,
 # then drops to 'node' user via docker-entrypoint.sh
 
-# Start gateway server with default config.
-# Binds to loopback (127.0.0.1) by default for security.
-#
-# For container platforms requiring external health checks:
-#   1. Set OPENCLAW_GATEWAY_TOKEN or OPENCLAW_GATEWAY_PASSWORD env var
-#   2. Override CMD: ["node","dist/index.js","gateway","--allow-unconfigured","--bind","lan"]
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
-# Default: Start gateway in deployment mode
-# - --allow-unconfigured: Enables /setup wizard for first-time configuration
-# - --bind lan: Listen on all interfaces (required for container networking)
-CMD ["node", "dist/index.js", "gateway", "--allow-unconfigured", "--bind", "lan"]
+# Start gateway server via bootstrap script
+CMD ["bash", "/app/scripts/bootstrap.sh"]

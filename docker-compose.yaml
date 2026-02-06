@@ -1,0 +1,195 @@
+services:
+  registry:
+    image: registry:2
+    restart: unless-stopped
+    volumes:
+      - registry-data:/var/lib/registry
+    environment:
+      REGISTRY_HTTP_SECRET: ${SERVICE_BASE64_REGISTRY}
+  openclaw:
+    # Use prebuilt image with Marcoby branding (recommended):
+    image: ${OPENCLAW_IMAGE:-ghcr.io/marcoby/openclaw-coolify:latest}
+    pull_policy: always
+    # Build from source (uncomment if needed):
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   args:
+    #     - OPENCLAW_BETA=${OPENCLAW_BETA:-false}
+    restart: on-failure:10
+    ports:
+      - "18789:18789"
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    environment:
+      DOCKER_HOST: tcp://docker-proxy:2375
+      OPENCLAW_ENABLE_WEBHOOK_PROXY: "1"
+      PORT: 18789
+      NODE_ENV: production
+      NODE_OPTIONS: "--max-old-space-size=4096"
+      HOME: /root
+      TERM: xterm-256color
+      # Persistence: Command History
+      HISTFILE: /root/.openclaw/.bash_history
+      HISTSIZE: 50000
+      HISTSAVE: 50000
+      HISTCONTROL: ignoreboth
+
+      # Map OpenClaw vars
+      OPENCLAW_GATEWAY_BIND: lan
+      OPENCLAW_GATEWAY_PORT: ${OPENCLAW_GATEWAY_PORT:-18790}
+      OPENCLAW_GATEWAY_TRUSTED_PROXIES: ${OPENCLAW_GATEWAY_TRUSTED_PROXIES:-127.0.0.1,10.0.1.1}
+
+      # Enable Raw Streaming (for watching interactive tools like gh login)
+      OPENCLAW_RAW_STREAM: "1"
+
+      # Fixed Gateway Token (matches Nexus/Client default dev token)
+      OPENCLAW_GATEWAY_TOKEN: "sk-openclaw-local"
+
+      # Agent Model Configuration (override via Coolify env vars)
+      OPENCLAW_AGENTS_DEFAULTS_MODEL_PRIMARY: ${OPENCLAW_AGENTS_DEFAULTS_MODEL_PRIMARY:-google/gemini-3-pro-preview}
+      OPENCLAW_AGENTS_DEFAULTS_MODEL_FALLBACKS: ${OPENCLAW_AGENTS_DEFAULTS_MODEL_FALLBACKS:-["openai/gpt-3.5-turbo", "openai/gpt-4", "google/gemini-3-pro-preview"]}
+
+      # Tell the binary where to look for state/config
+      OPENCLAW_STATE_DIR: /root/.openclaw
+      OPENCLAW_WORKSPACE: /root/openclaw-workspace
+
+      # API Keys injected from .env or Coolify
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      MINIMAX_API_KEY: ${MINIMAX_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      KIMI_API_KEY: ${KIMI_API_KEY}
+      OPENCODE_API_KEY: ${OPENCODE_API_KEY}
+      MOONSHOT_API_KEY: ${KIMI_API_KEY}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      SANDBOX_CONTAINER: ${SANDBOX_CONTAINER:-false}
+
+      # Optional integrations
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
+      NANOBANANA_API_KEY: ${NANOBANANA_API_KEY}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY}
+
+      SERVICE_URL_OPENCLAW_18789: null
+      SERVICE_URL_OPENCLAWWEBHOOK_8788: null
+      BASE_URL: "https://${SERVICE_FQDN_OPENCLAW}"
+      PUBLIC_URL: "https://${SERVICE_FQDN_OPENCLAW}"
+      # Bootstrap controls
+      OPENCLAW_AUTO_BOOTSTRAP: "1"
+      OPENCLAW_PRINT_ACCESS: "1"
+      GATEWAY_TRUSTED_PROXIES: "*"
+      # Fix for EMFILE/Inotify issues in Docker
+      CHOKIDAR_USEPOLLING: "true"
+      # Public URL Access
+
+      CF_TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN}
+      # Deployment & Git
+      VERCEL_ORG_ID: ${VERCEL_ORG_ID}
+      VERCEL_PROJECT_ID: ${VERCEL_PROJECT_ID}
+      VERCEL_TOKEN: ${VERCEL_TOKEN}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_USERNAME: ${GITHUB_USERNAME}
+      GITHUB_EMAIL: ${GITHUB_EMAIL}
+      # Optional
+      OPENCLAW_BETA: ${OPENCLAW_BETA:-false}
+
+    # No public port here; Caddy publishes 18789 and proxies to the gateway.
+
+    volumes:
+      - openclaw-config:/root/.openclaw
+      - openclaw-workspace:/root/openclaw-workspace
+
+      # Secure: Socket mount removed in favor of proxy
+      # - /var/run/docker.sock:/var/run/docker.sock
+
+    depends_on:
+      - docker-proxy
+
+    command: ["bash", "/app/scripts/bootstrap.sh"]
+
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      LOG_LEVEL: info
+      # Security: Only enable necessary Docker APIs
+      POST: 1 # Create containers
+      CONTAINERS: 1 # List/manage containers
+      IMAGES: 1 # Pull images
+      NETWORKS: 1 # Connect to networks
+      INFO: 1 # Version check
+      VERSION: 1
+      EXEC: 1 # Run commands (exec)
+      EVENTS: 1 # Listen for events (if needed)
+
+  #  qdrant:
+  #    image: qdrant/qdrant:latest
+  #    restart: unless-stopped
+  #    volumes:
+  #      - qdrant-data:/qdrant/storage
+
+  #  linkding:
+  #    image: sissbruecker/linkding:latest
+  #    restart: unless-stopped
+  #    volumes:
+  #      - linkding-data:/etc/linkding/data
+  #    environment:
+  #      - LD_DISABLE_BACKGROUND_TASKS=False
+  #      - LD_DISABLE_URL_VALIDATION=False
+
+  #  miniflux:
+  #    image: miniflux/miniflux:latest
+  #    restart: unless-stopped
+  #    depends_on:
+  #      - miniflux-db
+  #    environment:
+  #      - DATABASE_URL=postgres://miniflux:secret@miniflux-db/miniflux?sslmode=disable
+  #      - RUN_MIGRATIONS=1
+  #      - CREATE_ADMIN=1
+  #      - ADMIN_USERNAME=admin
+  #      - ADMIN_PASSWORD=admin123
+  #      - BASE_URL=http://localhost:8080
+
+  #  miniflux-db:
+  #    image: postgres:15-alpine
+  #    restart: unless-stopped
+  #    environment:
+  #      - POSTGRES_USER=miniflux
+  #      - POSTGRES_PASSWORD=secret
+  #      - POSTGRES_DB=miniflux
+  #    volumes:
+  #      - miniflux-db:/var/lib/postgresql/data
+
+  searxng:
+    build:
+      context: .
+      dockerfile: searxng/Dockerfile
+    restart: unless-stopped
+
+    volumes:
+      - searxng-data:/var/lib/searxng
+
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080
+      SEARXNG_SERVER_SECRET_KEY: ${SERVICE_BASE64_SEARXNG}
+
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+
+volumes:
+  openclaw-config:
+  openclaw-workspace:
+  searxng-data:
+
+  registry-data:
+#  qdrant-data:
+#  linkding-data:
+#  miniflux-db:

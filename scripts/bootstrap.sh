@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+set -e
+
+OPENCLAW_STATE="/root/.openclaw"
+CONFIG_FILE="$OPENCLAW_STATE/openclaw.json"
+WORKSPACE_DIR="/root/openclaw-workspace"
+
+
+
+mkdir -p "$OPENCLAW_STATE" "$WORKSPACE_DIR"
+chmod 700 "$OPENCLAW_STATE"
+
+mkdir -p "$OPENCLAW_STATE/credentials"
+mkdir -p "$OPENCLAW_STATE/agents/main/sessions"
+chmod 700 "$OPENCLAW_STATE/credentials"
+
+# ----------------------------
+# Seed Agent Workspaces
+# ----------------------------
+seed_agent() {
+  local id="$1"
+  local name="$2"
+  local dir="/root/openclaw-$id"
+
+  if [ "$id" = "main" ]; then
+    dir="/root/openclaw-workspace"
+  fi
+
+  mkdir -p "$dir"
+
+  # ✅ MAIN agent ALWAYS gets ORIGINAL repo SOUL.md and BOOTSTRAP.md
+  # This must happen BEFORE the "skip existing" check to ensure updates are applied
+  if [ "$id" = "main" ]; then
+    if [ -f "./SOUL.md" ]; then
+      echo "✨ Syncing SOUL.md to $dir (Force overwrite for main agent)"
+      cp -f "./SOUL.md" "$dir/SOUL.md"
+      echo "🚀 Syncing BOOTSTRAP.md to $dir"
+      cp -f "./BOOTSTRAP.md" "$dir/BOOTSTRAP.md"
+    fi
+    return 0
+  fi
+
+  # 🔒 For non-main agents: NEVER overwrite existing SOUL.md
+  if [ -f "$dir/SOUL.md" ]; then
+    echo "🧠 SOUL.md already exists for $id — skipping"
+    return 0
+  fi
+
+  # fallback for other agents (first-time seeding)
+  cat >"$dir/SOUL.md" <<EOF
+# SOUL.md - $name
+You are OpenClaw, a helpful and premium AI assistant.
+EOF
+}
+
+seed_agent "main" "OpenClaw"
+
+# ----------------------------
+# Generate Config with Prime Directive
+# ----------------------------
+if [ ! -f "$CONFIG_FILE" ]; then
+  echo "🏥 Generating openclaw.json with Prime Directive..."
+  TOKEN=$(openssl rand -hex 24 2>/dev/null || node -e "console.log(require('crypto').randomBytes(24).toString('hex'))")
+  cat >"$CONFIG_FILE" <<EOF
+{
+"commands": {
+    "native": true,
+    "nativeSkills": true,
+    "text": true,
+    "bash": true,
+    "config": true,
+    "debug": true,
+    "restart": true,
+    "useAccessGroups": true
+  },
+  "skills": {
+    "allowBundled": [
+      "*"
+    ],
+    "install": {
+      "nodeManager": "npm"
+    }
+  },
+  "gateway": {
+  "port": $OPENCLAW_GATEWAY_PORT,
+  "mode": "local",
+    "bind": "lan",
+    "controlUi": {
+      "enabled": true,
+      "allowInsecureAuth": false
+    },
+    "trustedProxies": [
+      "*"
+    ],
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
+    "auth": { "mode": "token", "token": "\${OPENCLAW_GATEWAY_TOKEN:-$TOKEN}" }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "\${OPENCLAW_AGENTS_DEFAULTS_MODEL_PRIMARY:-google/gemini-3-pro-preview}",
+        "fallbacks": \${OPENCLAW_AGENTS_DEFAULTS_MODEL_FALLBACKS:-[\"openai/gpt-3.5-turbo\", \"openai/gpt-4\", \"google/gemini-3-pro-preview\"]}
+      },
+      "workspace": "$WORKSPACE_DIR",
+      "envelopeTimestamp": "on",
+      "envelopeElapsed": "on",
+      "cliBackends": {},
+      "compaction": {
+        "mode": "default"
+      },
+      "memorySearch": {
+        "provider": "local",
+        "local": {
+          "modelPath": "/usr/local/share/openclaw/models/nomic-embed-text-v1.5.Q4_K_M.gguf"
+        }
+      },
+      "heartbeat": {
+        "every": "1h"
+      },
+      "maxConcurrent": 4,
+      "sandbox": {
+        "mode": "non-main",
+        "scope": "session",
+        "browser": {
+          "enabled": true
+        }
+      }
+    },
+    "list": [
+      { "id": "main","default": true, "name": "default",  "workspace": "/root/openclaw-workspace"}
+    ]
+  }
+}
+EOF
+  else
+    echo "🔄 Updating model.primary and model.fallbacks in openclaw.json from env..."
+     # Ensure fallbacks is always valid JSON for jq --argjson
+     DEFAULT_FALLBACKS='["openai/gpt-3.5-turbo", "openai/gpt-4", "google/gemini-3-pro-preview"]'
+     FALLBACKS_JSON="$OPENCLAW_AGENTS_DEFAULTS_MODEL_FALLBACKS"
+     # Validate if FALLBACKS_JSON is a valid JSON array
+     if ! echo "$FALLBACKS_JSON" | jq empty 2>/dev/null; then
+      FALLBACKS_JSON="$DEFAULT_FALLBACKS"
+     fi
+     jq --arg model "${OPENCLAW_AGENTS_DEFAULTS_MODEL_PRIMARY:-google/gemini-3-pro-preview}" \
+       --argjson fallbacks "$FALLBACKS_JSON" \
+       '.agents.defaults.model.primary = $model | .agents.defaults.model.fallbacks = $fallbacks' \
+       "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+  fi
+
+# ----------------------------
+# Export state
+# ----------------------------
+export OPENCLAW_STATE_DIR="$OPENCLAW_STATE"
+
+# ----------------------------
+# Sandbox setup
+# ----------------------------
+[ -f scripts/sandbox-setup.sh ] && bash scripts/sandbox-setup.sh
+[ -f scripts/sandbox-browser-setup.sh ] && bash scripts/sandbox-browser-setup.sh
+
+# ----------------------------
+# Recovery & Monitoring
+# ----------------------------
+if [ -f scripts/recover_sandbox.sh ]; then
+  echo "🛡️  Deploying Recovery Protocols..."
+  cp scripts/recover_sandbox.sh "$WORKSPACE_DIR/"
+  cp scripts/monitor_sandbox.sh "$WORKSPACE_DIR/"
+  chmod +x "$WORKSPACE_DIR/recover_sandbox.sh" "$WORKSPACE_DIR/monitor_sandbox.sh"
+  
+  # Run initial recovery
+  bash "$WORKSPACE_DIR/recover_sandbox.sh"
+  
+  # Start background monitor
+  nohup bash "$WORKSPACE_DIR/monitor_sandbox.sh" >/dev/null 2>&1 &
+fi
+
+# ----------------------------
+# Run OpenClaw
+# ----------------------------
+ulimit -n 65535
+# ----------------------------
+# Banner & Access Info
+# ----------------------------
+# Try to extract existing token if not already set (e.g. from previous run)
+if [ -f "$CONFIG_FILE" ]; then
+    SAVED_TOKEN=$(grep -o '"token": "[^"]*"' "$CONFIG_FILE" | cut -d'"' -f4)
+    if [ -n "$SAVED_TOKEN" ]; then
+        TOKEN="$SAVED_TOKEN"
+    fi
+fi
+
+echo ""
+echo "=================================================================="
+echo "🦞 OpenClaw is ready!"
+echo "=================================================================="
+echo ""
+echo "🔑 Access Token: $TOKEN"
+echo ""
+echo "🌍 Service URL (Local): http://localhost:${OPENCLAW_GATEWAY_PORT:-18789}?token=$TOKEN"
+if [ -n "$SERVICE_FQDN_OPENCLAW" ]; then
+    echo "☁️  Service URL (Public): https://${SERVICE_FQDN_OPENCLAW}?token=$TOKEN"
+    echo "    (Wait for cloud tunnel to propagate if just started)"
+fi
+echo ""
+echo "👉 Onboarding:"
+echo "   1. Access the UI using the link above."
+echo "   2. To approve this machine, run inside the container:"
+echo "      openclaw-approve"
+echo "   3. To start the onboarding wizard:"
+echo "      openclaw onboard"
+echo ""
+echo "=================================================================="
+echo "🔧 Current ulimit is: $(ulimit -n)"
+exec openclaw gateway run
