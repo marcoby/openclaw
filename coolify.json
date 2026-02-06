@@ -1,0 +1,15 @@
+{
+  "name": "OpenClaw – Connected Agentic Coding",
+  "description": "Run your own production-grade agentic coding assistant. Supports MiniMax, Claude, Gemini, and more. One-click deploy on Coolify.",
+  "version": "1.0.0",
+  "services": [
+    {
+      "name": "OpenClaw",
+      "type": "docker-compose",
+      "dockerComposeFile": "docker-compose.yaml"
+    }
+  ],
+  "tags": ["ai", "agent", "coding", "minimax", "openclaw", "self-hosted"],
+  "documentation": "https://docs.openclaw.ai/",
+  "website": "https://openclaw.ai"
+}
