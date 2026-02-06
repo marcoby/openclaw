@@ -137,15 +137,50 @@ if [ ! -f "$CONFIG_FILE" ]; then
 EOF
   else
     echo "🔄 Updating model.primary and model.fallbacks in openclaw.json from env..."
-     # Ensure fallbacks is always valid JSON for jq --argjson
-     DEFAULT_FALLBACKS='["openai/gpt-3.5-turbo", "openai/gpt-4", "google/gemini-3-pro-preview"]'
-     FALLBACKS_JSON="$OPENCLAW_AGENTS_DEFAULTS_MODEL_FALLBACKS"
-     # Validate if FALLBACKS_JSON is a valid JSON array
-     if ! echo "$FALLBACKS_JSON" | jq empty 2>/dev/null; then
-      FALLBACKS_JSON="$DEFAULT_FALLBACKS"
+     
+     # Dynamic Fallback Construction based on available keys
+     # This prevents "Unknown model" errors for providers that are not configured.
+     FALLBACKS_ARRAY=()
+     
+     # 1. OpenAI (if key exists)
+     if [ -n "$OPENAI_API_KEY" ]; then
+       FALLBACKS_ARRAY+=("\"openai/gpt-3.5-turbo\"" "\"openai/gpt-4\"")
      fi
+     
+     # 2. Google (if key exists)
+     if [ -n "$GEMINI_API_KEY" ]; then
+       FALLBACKS_ARRAY+=("\"google/gemini-3-pro-preview\"")
+     fi
+     
+     # 3. OpenRouter (if key exists)
+     if [ -n "$OPENROUTER_API_KEY" ]; then
+       FALLBACKS_ARRAY+=("\"openrouter/openai/gpt-3.5-turbo\"")
+     fi
+     
+     # Join array with commas
+     IFS=,
+     FALLBACKS_STRING="${FALLBACKS_ARRAY[*]}"
+     unset IFS
+     
+     # Wrap in brackets to form JSON array
+     GENERATED_FALLBACKS="[$FALLBACKS_STRING]"
+     
+     # If user explicitly provided fallbacks, use those. Otherwise use generated.
+     # If generated is empty (no keys), fallback to a safe default that might fail but is standard.
+     if [ "$GENERATED_FALLBACKS" == "[]" ]; then
+       GENERATED_FALLBACKS='["openai/gpt-3.5-turbo", "openai/gpt-4", "google/gemini-3-pro-preview"]'
+     fi
+     
+     FINAL_FALLBACKS="${OPENCLAW_AGENTS_DEFAULTS_MODEL_FALLBACKS:-$GENERATED_FALLBACKS}"
+     
+     # Validate JSON validity for safety
+     if ! echo "$FINAL_FALLBACKS" | jq empty 2>/dev/null; then
+       echo "⚠️ Invalid JSON in fallbacks, reverting to safe default."
+       FINAL_FALLBACKS='["openai/gpt-3.5-turbo", "openai/gpt-4", "google/gemini-3-pro-preview"]'
+     fi
+
      jq --arg model "${OPENCLAW_AGENTS_DEFAULTS_MODEL_PRIMARY:-google/gemini-3-pro-preview}" \
-       --argjson fallbacks "$FALLBACKS_JSON" \
+       --argjson fallbacks "$FINAL_FALLBACKS" \
        '.agents.defaults.model.primary = $model | .agents.defaults.model.fallbacks = $fallbacks' \
        "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
   fi
