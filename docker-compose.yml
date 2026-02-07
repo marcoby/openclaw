@@ -27,14 +27,23 @@ services:
       - "18790:18790"
     init: true
     restart: unless-stopped
-    command: [ "node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789", "--allow-unconfigured" ]
+    command:
+      [
+        "node",
+        "dist/index.js",
+        "gateway",
+        "--bind",
+        "lan",
+        "--port",
+        "18789",
+        "--allow-unconfigured",
+      ]
 
   openclaw-cli:
     image: marcoby-openclaw:local
     environment:
       HOME: /home/node
       TERM: xterm-256color
-      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       BROWSER: echo
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
       CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY:-}
