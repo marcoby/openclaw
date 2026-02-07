@@ -16,11 +16,15 @@ import {
 export const AgentDefaultsSchema = z
   .object({
     model: z
-      .object({
-        primary: z.string().optional(),
-        fallbacks: z.array(z.string()).optional(),
-      })
-      .strict()
+      .union([
+        z.string(),
+        z
+          .object({
+            primary: z.string().optional(),
+            fallbacks: z.array(z.string()).optional(),
+          })
+          .strict(),
+      ])
       .optional(),
     imageModel: z
       .object({

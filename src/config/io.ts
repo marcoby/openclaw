@@ -287,7 +287,7 @@ export function createConfigIO(overrides: ConfigIoDeps = {}) {
       // Dynamic env pickup for model defaults (safe: in-memory only)
       if (cfg.agents?.defaults) {
         // Primary model
-        const envPrimary = process.env.OPENCLAW_AGENTS_DEFAULTS_MODEL_PRIMARY?.trim();
+        const envPrimary = deps.env.OPENCLAW_AGENTS_DEFAULTS_MODEL_PRIMARY?.trim();
         if (envPrimary) {
           if (typeof cfg.agents.defaults.model === "object" && cfg.agents.defaults.model !== null) {
             cfg.agents.defaults.model.primary = envPrimary;
@@ -296,7 +296,7 @@ export function createConfigIO(overrides: ConfigIoDeps = {}) {
           }
         }
         // Fallbacks
-        const envFallbacks = process.env.OPENCLAW_AGENTS_DEFAULTS_MODEL_FALLBACKS?.trim();
+        const envFallbacks = deps.env.OPENCLAW_AGENTS_DEFAULTS_MODEL_FALLBACKS?.trim();
         if (envFallbacks) {
           let parsedFallbacks: string[] | undefined;
           try {
@@ -305,13 +305,18 @@ export function createConfigIO(overrides: ConfigIoDeps = {}) {
             // fallback to comma-split
             parsedFallbacks = envFallbacks
               .split(",")
-              .map((s) => s.trim())
+              .map((s) => s.trim().replace(/^["']|["']$/g, ""))
               .filter(Boolean);
           }
           if (typeof cfg.agents.defaults.model === "object" && cfg.agents.defaults.model !== null) {
             cfg.agents.defaults.model.fallbacks = parsedFallbacks;
           } else {
-            cfg.agents.defaults.model = { fallbacks: parsedFallbacks };
+            const currentPrimary =
+              typeof cfg.agents.defaults.model === "string" ? cfg.agents.defaults.model : undefined;
+            cfg.agents.defaults.model = {
+              primary: currentPrimary,
+              fallbacks: parsedFallbacks,
+            };
           }
         }
       }
