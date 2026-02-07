@@ -5,6 +5,7 @@ SOPs explain how Marcoby consistently executes recurring processes. Pair each SO
 SOP Template
 
 # <SOP Name>
+
 - Purpose: <why this exists>
 - Scope: <when to use>
 - Owner: <role/person>

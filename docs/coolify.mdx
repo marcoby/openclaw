@@ -53,18 +53,19 @@ OpenClaw needs persistent storage for configuration, credentials, and workspace.
 
 Go to **Environment Variables** tab and add:
 
-| Variable                     | Value                    | Description                                      |
-| ---------------------------- | ------------------------ | ------------------------------------------------ |
-| `PORT`                       | `8080`                   | HTTP server port                                 |
-| `SETUP_PASSWORD`             | `<your-secure-password>` | Password for `/setup` wizard                     |
-| `OPENCLAW_STATE_DIR`         | `/data/.openclaw`        | Config and credentials directory                 |
-| `OPENCLAW_WORKSPACE_DIR`     | `/data/workspace`        | Agent workspace directory                        |
-| `OPENCLAW_GATEWAY_TOKEN`     | `<generate-random-hex>`  | Gateway authentication token (64+ chars)         |
-| `NODE_ENV`                   | `production`             | Node environment                                 |
-| `OPENCLAW_GATEWAY_BIND`      | `lan`                    | Listen on all interfaces                         |
-| `OPENCLAW_GATEWAY_PORT`      | `8080`                   | Gateway port (must match PORT)                   |
+| Variable                 | Value                    | Description                              |
+| ------------------------ | ------------------------ | ---------------------------------------- |
+| `PORT`                   | `8080`                   | HTTP server port                         |
+| `SETUP_PASSWORD`         | `<your-secure-password>` | Password for `/setup` wizard             |
+| `OPENCLAW_STATE_DIR`     | `/data/.openclaw`        | Config and credentials directory         |
+| `OPENCLAW_WORKSPACE_DIR` | `/data/workspace`        | Agent workspace directory                |
+| `OPENCLAW_GATEWAY_TOKEN` | `<generate-random-hex>`  | Gateway authentication token (64+ chars) |
+| `NODE_ENV`               | `production`             | Node environment                         |
+| `OPENCLAW_GATEWAY_BIND`  | `lan`                    | Listen on all interfaces                 |
+| `OPENCLAW_GATEWAY_PORT`  | `8080`                   | Gateway port (must match PORT)           |
 
 **Generate a secure token:**
+
 ```bash
 openssl rand -hex 32
 ```
@@ -185,6 +186,7 @@ In Coolify dashboard:
 ### Backups
 
 Download a backup at:
+
 - `https://<your-domain>/setup/export`
 
 This exports your OpenClaw state + workspace so you can migrate to another host.

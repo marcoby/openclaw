@@ -1,12 +1,12 @@
-import crypto from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import crypto from "node:crypto";
 import { URL } from "node:url";
-import { writeConfigFile } from "../config/io.js";
-import type { OpenClawConfig } from "../config/config.js";
-import { createSubsystemLogger } from "../logging/subsystem.js";
-import { saveAuthProfileStore, ensureAuthProfileStore } from "../agents/auth-profiles/store.js";
-import { AUTH_STORE_VERSION } from "../agents/auth-profiles/constants.js";
 import type { ApiKeyCredential, TokenCredential } from "../agents/auth-profiles/types.js";
+import type { OpenClawConfig } from "../config/config.js";
+import { AUTH_STORE_VERSION } from "../agents/auth-profiles/constants.js";
+import { saveAuthProfileStore, ensureAuthProfileStore } from "../agents/auth-profiles/store.js";
+import { writeConfigFile } from "../config/io.js";
+import { createSubsystemLogger } from "../logging/subsystem.js";
 
 const log = createSubsystemLogger("setup");
 

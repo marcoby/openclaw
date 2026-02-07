@@ -29,23 +29,23 @@ For each client, use this standardized `docker-compose.yml`. It maps the local `
 ```yaml
 services:
   openclaw:
-    image: marcoby-ops:latest  # Your built image
+    image: marcoby-ops:latest # Your built image
     restart: always
     environment:
       # Tell OpenClaw to look for data in /data
       OPENCLAW_CONFIG_DIR: /data/.openclaw
       OPENCLAW_WORKSPACE_DIR: /data/workspace
-      
+
       # Load keys from .env
       MSTEAMS_APP_ID: ${MSTEAMS_APP_ID}
       MSTEAMS_APP_PASSWORD: ${MSTEAMS_APP_PASSWORD}
       MSTEAMS_TENANT_ID: ${MSTEAMS_TENANT_ID}
-      
+
     volumes:
       # THE GOLDEN MAPPING:
       # Map local 'persistence' folder to '/data' inside container
       - ./persistence:/data
-      
+
     ports:
       # Unique port per client if not using Coolify proxy
       - "${PORT}:18789"
@@ -54,6 +54,7 @@ services:
 ## 3. Hydration (Automatic)
 
 When you deploy a new client:
+
 1. Create the folder: `mkdir client-gamma`
 2. Copy the template `docker-compose.yml` and `.env`.
 3. Create the data dir: `mkdir persistence` (ensure it's writable by UID 1000: `chown 1000:1000 persistence`).
@@ -63,7 +64,7 @@ When you deploy a new client:
 
 ## 4. Maintenance
 
-- **Update Brain**: Build a new Docker image with updated `packages/marcoby-core`. Redeploy. (Note: Only *new* files won't overwrite existing user changes unless you force it, currently the script is safe/conservative).
+- **Update Brain**: Build a new Docker image with updated `packages/marcoby-core`. Redeploy. (Note: Only _new_ files won't overwrite existing user changes unless you force it, currently the script is safe/conservative).
 - **Backup**: `tar -czf client-alpha-backup.tar.gz client-alpha/`
 - **Migrate**: Copy the folder to another server, `docker compose up -d`.
 

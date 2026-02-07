@@ -1,12 +1,12 @@
+import type { IncomingMessage, ServerResponse } from "node:http";
 import fs from "node:fs";
 import path from "node:path";
-import type { IncomingMessage, ServerResponse } from "node:http";
-import { resolveStateDir, resolveOAuthPath } from "../config/paths.js";
-import { resolveAuthStorePath } from "../agents/auth-profiles/paths.js";
 import type { ResolvedGatewayAuth } from "./auth.js";
-import { authorizeGatewayConnect } from "./auth.js";
+import { resolveAuthStorePath } from "../agents/auth-profiles/paths.js";
+import { resolveStateDir, resolveOAuthPath } from "../config/paths.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { VERSION } from "../version.js";
+import { authorizeGatewayConnect } from "./auth.js";
 
 const log = createSubsystemLogger("export");
 

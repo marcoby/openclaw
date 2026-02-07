@@ -1,6 +1,6 @@
 # Coolify Docker Compose Template
 # This file can be used as a starting point for deploying OpenClaw on Coolify
-# 
+#
 # Usage:
 #   1. Create a new Docker Compose application in Coolify
 #   2. Point to your repository containing this file
@@ -16,7 +16,7 @@
 #   - CLAUDE_WEB_SESSION_KEY
 #   - CLAUDE_WEB_COOKIE
 
-version: '3.8'
+version: "3.8"
 
 services:
   openclaw-gateway:
@@ -25,7 +25,7 @@ services:
       dockerfile: Dockerfile
       args:
         OPENCLAW_DOCKER_APT_PACKAGES: ${OPENCLAW_DOCKER_APT_PACKAGES:-}
-    
+
     # Health check for Coolify monitoring
     healthcheck:
       test: ["CMD", "node", "dist/index.js", "health", "--token", "${OPENCLAW_GATEWAY_TOKEN}"]
@@ -33,50 +33,50 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    
+
     environment:
       # Node environment
       HOME: /home/node
       TERM: xterm-256color
       NODE_ENV: production
-      
+
       # HTTP server port (Coolify default)
       PORT: ${PORT:-8080}
-      
+
       # Gateway configuration
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       OPENCLAW_GATEWAY_PORT: ${PORT:-8080}
       OPENCLAW_GATEWAY_BIND: ${OPENCLAW_GATEWAY_BIND:-lan}
       OPENCLAW_BRIDGE_PORT: ${OPENCLAW_BRIDGE_PORT:-18790}
-      
+
       # Setup wizard
       SETUP_PASSWORD: ${SETUP_PASSWORD}
-      
+
       # Provider credentials (optional - set via /setup wizard)
       CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY:-}
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY:-}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE:-}
-      
+
       # Persistent storage paths
       OPENCLAW_STATE_DIR: ${OPENCLAW_STATE_DIR:-/data/.openclaw}
       OPENCLAW_WORKSPACE_DIR: ${OPENCLAW_WORKSPACE_DIR:-/data/workspace}
-    
+
     volumes:
       # Main persistent storage volume
       # In Coolify, configure this as a named volume mounted at /data
       - openclaw-data:/data
-    
+
     ports:
       # Expose gateway port
       # Coolify will handle reverse proxy and HTTPS
       - "${PORT:-8080}:${PORT:-8080}"
-    
+
     # Use init to properly handle signals
     init: true
-    
+
     # Restart policy
     restart: unless-stopped
-    
+
     # Run the gateway
     command:
       - node
@@ -87,7 +87,7 @@ services:
       - --port
       - ${PORT:-8080}
       - --allow-unconfigured
-      
+
     # Use standard entrypoint from Dockerfile which handles hydration
     # entrypoint: ["/app/docker-entrypoint.sh"]
 

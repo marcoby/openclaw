@@ -8,6 +8,7 @@ This is the local operating hub for Marcoby. It mirrors core company knowledge a
 - Operating cadence: weekly review on <day>, monthly OKR check-in on <day>
 
 Folders
+
 - okrs — Quarterly objectives and key results
 - projects — Active projects with briefs and status
 - sops — Standard operating procedures (how we do things)
@@ -17,6 +18,7 @@ Folders
 - tasks — Backlog and weekly plan
 
 Conventions
+
 - One project = one folder under /projects with a README.md
 - SOPs describe why/when/who/what; checklists capture the exact steps
 - Notes files end with decisions and action items

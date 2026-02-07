@@ -39,6 +39,7 @@ To make "Marcoby Ops" accessible to your team, configure a messaging channel.
 Follow the detailed [Azure Bot Setup Guide](./AZURE_BOT_SETUP.md) to creating your Azure Bot and connecting it to Teams.
 
 Summary of required variables:
+
 - `MSTEAMS_APP_ID`
 - `MSTEAMS_APP_PASSWORD`
 - `MSTEAMS_TENANT_ID`

@@ -42,7 +42,7 @@ async function getRecentSessionContent(
             // Extract text content
             const text = Array.isArray(msg.content)
               ? // oxlint-disable-next-line typescript/no-explicit-any
-                msg.content.find((c: any) => c.type === "text")?.text
+              msg.content.find((c: any) => c.type === "text")?.text
               : msg.content;
             if (text && !text.startsWith("/")) {
               allMessages.push(`${role}: ${text}`);
@@ -130,9 +130,13 @@ const saveSessionToMemory: HookHandler = async (event) => {
         const slugGenPath = path.join(openclawRoot, "llm-slug-generator.js");
         const { generateSlugViaLLM } = await import(slugGenPath);
 
-        // Use LLM to generate a descriptive slug
-        slug = await generateSlugViaLLM({ sessionContent, cfg });
-        log.debug("Generated slug", { slug });
+        try {
+          // Use LLM to generate a descriptive slug
+          slug = await generateSlugViaLLM({ sessionContent, cfg });
+          log.debug("Generated slug", { slug });
+        } catch (error) {
+          log.warn("Failed to generate slug via LLM, falling back to timestamp", { error });
+        }
       }
     }
 

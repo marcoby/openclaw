@@ -19,8 +19,8 @@ To connect "Marcoby Ops" to Microsoft Teams, you need to register a generic "Azu
 7.  **Data Residency**: Global is usually fine.
 8.  **Pricing Tier**: Select **Free (F0)** (Standard is overkill for internal tools).
 9.  **Type of App**: Select **Single Tenant**.
-    - *Note*: If "Multi Tenant" is unavailable (common in some orgs), **Single Tenant** is the correct choice for an internal bot. It ensures only users in your directory can access it, which is better for SharePoint security anyway.
-    - *Avoid* "User-Assigned Managed Identity" for now unless you know how to configure it, as it adds complexity.
+    - _Note_: If "Multi Tenant" is unavailable (common in some orgs), **Single Tenant** is the correct choice for an internal bot. It ensures only users in your directory can access it, which is better for SharePoint security anyway.
+    - _Avoid_ "User-Assigned Managed Identity" for now unless you know how to configure it, as it adds complexity.
 10. Click **Review + Create**, then **Create**.
 
 ## Phase 2: Get Credentials

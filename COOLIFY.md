@@ -19,16 +19,17 @@ Deploy OpenClaw on your [Coolify](https://coolify.io) instance with Docker.
    - Mount Path: `/data`
 
 4. **Set Environment Variables**
+
    ```bash
    # Required
    PORT=8080
    SETUP_PASSWORD=your-secure-password
    OPENCLAW_GATEWAY_TOKEN=$(openssl rand -hex 32)
-   
+
    # Storage paths
    OPENCLAW_STATE_DIR=/data/.openclaw
    OPENCLAW_WORKSPACE_DIR=/data/workspace
-   
+
    # Gateway config
    OPENCLAW_GATEWAY_PORT=8080
    OPENCLAW_GATEWAY_BIND=lan
@@ -69,6 +70,7 @@ OPENCLAW_WORKSPACE_DIR=/data/workspace
 ## Health Check
 
 Configure in Coolify:
+
 - **Path**: `/health`
 - **Port**: `8080`
 - **Interval**: `30s`

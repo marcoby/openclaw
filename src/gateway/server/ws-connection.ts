@@ -61,8 +61,10 @@ export function attachGatewayWsConnectionHandler(params: {
   // Setup WebSocket Keep-Alive (Heartbeat) to prevent proxy timeouts (e.g. 60s)
   const pingInterval = setInterval(() => {
     wss.clients.forEach((ws) => {
-      const socket = ws as any;
-      if (socket.isAlive === false) return socket.terminate();
+      const socket = ws as WebSocket & { isAlive: boolean };
+      if (!socket.isAlive) {
+        return socket.terminate();
+      }
       socket.isAlive = false;
       socket.ping();
     });
@@ -74,9 +76,9 @@ export function attachGatewayWsConnectionHandler(params: {
 
   wss.on("connection", (socket, upgradeReq) => {
     // Initial heartbeat state
-    (socket as any).isAlive = true;
+    (socket as WebSocket & { isAlive: boolean }).isAlive = true;
     socket.on("pong", () => {
-      (socket as any).isAlive = true;
+      (socket as WebSocket & { isAlive: boolean }).isAlive = true;
     });
 
     let client: GatewayWsClient | null = null;
@@ -164,6 +166,12 @@ export function attachGatewayWsConnectionHandler(params: {
       logWsControl.warn(`error conn=${connId} remote=${remoteAddr ?? "?"}: ${formatError(err)}`);
       close();
     });
+
+    // Generate a random token (same pattern as onboard-helpers.ts)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    function randomToken(): string {
+      return randomUUID(); // Using randomUUID from node:crypto
+    }
 
     const isNoisySwiftPmHelperClose = (userAgent: string | undefined, remote: string | undefined) =>
       Boolean(
