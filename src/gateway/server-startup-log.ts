@@ -22,6 +22,15 @@ export function logGatewayStartup(params: {
   params.log.info(`agent model: ${modelRef}`, {
     consoleMessage: `agent model: ${chalk.whiteBright(modelRef)}`,
   });
+
+  // Log fallback models if configured
+  const modelConfig = params.cfg.agents?.defaults?.model;
+  if (modelConfig && typeof modelConfig === "object" && modelConfig.fallbacks) {
+    params.log.info(`agent fallbacks: ${modelConfig.fallbacks.join(", ")}`, {
+      consoleMessage: `agent fallbacks: ${chalk.gray(modelConfig.fallbacks.join(", "))}`,
+    });
+  }
+
   const scheme = params.tlsEnabled ? "wss" : "ws";
   const formatHost = (host: string) => (host.includes(":") ? `[${host}]` : host);
   const hosts =
