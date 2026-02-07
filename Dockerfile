@@ -135,6 +135,8 @@ RUN ln -sf /app/scripts/openclaw-approve.sh /usr/local/bin/openclaw-approve && \
 # Build
 RUN OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build
 ENV OPENCLAW_PREFER_PNPM=1
+# Ensure UI dependencies are installed (in case root install missed them due to copy order)
+RUN cd ui && pnpm install
 RUN pnpm ui:build
 RUN npm link
 
