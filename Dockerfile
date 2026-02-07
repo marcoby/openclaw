@@ -43,7 +43,9 @@ RUN install -m 0755 -d /etc/apt/keyrings && \
   rm -rf /var/lib/apt/lists/*
 
 # Install Go
-RUN curl -L "https://go.dev/dl/go1.23.4.linux-amd64.tar.gz" -o go.tar.gz && \
+RUN arch=$(dpkg --print-architecture) && \
+  if [ "$arch" = "arm64" ]; then go_arch="arm64"; else go_arch="amd64"; fi && \
+  curl -L "https://go.dev/dl/go1.23.4.linux-${go_arch}.tar.gz" -o go.tar.gz && \
   tar -C /usr/local -xzf go.tar.gz && \
   rm go.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
